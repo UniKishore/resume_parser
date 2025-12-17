@@ -1,0 +1,416 @@
+package ui;
+
+import config.ConfigLoader;
+import model.Environment;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.function.Consumer;
+
+public class EnvironmentPanel extends JPanel {
+    private JComboBox<Environment> environmentComboBox;
+    private Consumer<Environment> environmentSelectionListener;
+    private List<Environment> environments;
+
+    public EnvironmentPanel() {
+        setLayout(new BorderLayout(0, 10));
+        setBackground(Color.WHITE);
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                BorderFactory.createEmptyBorder(20, 30, 20, 30)
+        ));
+        setMaximumSize(new Dimension(700, 100));
+        setPreferredSize(new Dimension(700, 100));
+
+        initComponents();
+    }
+
+    private void initComponents() {
+        JLabel titleLabel = new JLabel("Select Environment");
+        titleLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Content panel
+        JPanel contentPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        contentPanel.setBackground(Color.WHITE);
+
+        JLabel envLabel = new JLabel("Target Environment:");
+        envLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        // Load environments from YAML
+        try {
+            environments = ConfigLoader.loadEnvironments();
+            environmentComboBox = new JComboBox<>(environments.toArray(new Environment[0]));
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, 
+                "Failed to load environment configuration: " + e.getMessage(),
+                "Configuration Error", 
+                JOptionPane.ERROR_MESSAGE);
+            environmentComboBox = new JComboBox<>();
+        }
+
+        environmentComboBox.setFont(new Font("Arial", Font.PLAIN, 13));
+        environmentComboBox.setPreferredSize(new Dimension(250, 35));
+        environmentComboBox.setBackground(Color.WHITE);
+        environmentComboBox.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Add selection listener
+        environmentComboBox.addActionListener(e -> {
+            Environment selected = (Environment) environmentComboBox.getSelectedItem();
+            if (selected != null && environmentSelectionListener != null) {
+                environmentSelectionListener.accept(selected);
+            }
+        });
+
+        contentPanel.add(envLabel);
+        contentPanel.add(environmentComboBox);
+
+        add(titleLabel, BorderLayout.NORTH);
+        add(contentPanel, BorderLayout.CENTER);
+    }
+
+    public void setEnvironmentSelectionListener(Consumer<Environment> listener) {
+        this.environmentSelectionListener = listener;
+    }
+
+    public Environment getSelectedEnvironment() {
+        return (Environment) environmentComboBox.getSelectedItem();
+    }
+}
+
+
+
+
+
+
+
+
+environments:
+  - name: Development
+    dbUrl: jdbc:mysql://dev-db-server:3306/testdb
+    username: dev_user
+    password: dev_pass123
+    fileUploadBaseUrl: http://dev-server.company.com/upload
+
+  - name: QA
+    dbUrl: jdbc:mysql://qa-db-server:3306/testdb
+    username: qa_user
+    password: qa_pass123
+    fileUploadBaseUrl: http://qa-server.company.com/upload
+
+  - name: Staging
+    dbUrl: jdbc:mysql://staging-db-server:3306/testdb
+    username: staging_user
+    password: staging_pass123
+    fileUploadBaseUrl: http://staging-server.company.com/upload
+
+  - name: Production
+    dbUrl: jdbc:mysql://prod-db-server:3306/testdb
+    username: prod_user
+    password: prod_pass123
+    fileUploadBaseUrl: http://prod-server.company.com/upload
+
+
+
+
+
+
+
+package model;
+
+public class Environment {
+    private String name;
+    private String dbUrl;
+    private String username;
+    private String password;
+    private String fileUploadBaseUrl;
+
+    // Constructor
+    public Environment() {
+    }
+
+    public Environment(String name, String dbUrl, String username, String password, String fileUploadBaseUrl) {
+        this.name = name;
+        this.dbUrl = dbUrl;
+        this.username = username;
+        this.password = password;
+        this.fileUploadBaseUrl = fileUploadBaseUrl;
+    }
+
+    // Getters and Setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDbUrl() {
+        return dbUrl;
+    }
+
+    public void setDbUrl(String dbUrl) {
+        this.dbUrl = dbUrl;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getFileUploadBaseUrl() {
+        return fileUploadBaseUrl;
+    }
+
+    public void setFileUploadBaseUrl(String fileUploadBaseUrl) {
+        this.fileUploadBaseUrl = fileUploadBaseUrl;
+    }
+
+    @Override
+    public String toString() {
+        return name; // This is what will be displayed in the dropdown
+    }
+}
+
+
+
+
+
+
+
+
+package config;
+
+import model.Environment;
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class ConfigLoader {
+    private static final String CONFIG_FILE = "config/environments.yaml";
+
+    public static List<Environment> loadEnvironments() {
+        List<Environment> environments = new ArrayList<>();
+        
+        try {
+            Yaml yaml = new Yaml();
+            InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream(CONFIG_FILE);
+            
+            if (inputStream == null) {
+                throw new RuntimeException("Config file not found: " + CONFIG_FILE);
+            }
+            
+            Map<String, Object> data = yaml.load(inputStream);
+            List<Map<String, String>> envList = (List<Map<String, String>>) data.get("environments");
+            
+            for (Map<String, String> envData : envList) {
+                Environment env = new Environment(
+                    envData.get("name"),
+                    envData.get("dbUrl"),
+                    envData.get("username"),
+                    envData.get("password"),
+                    envData.get("fileUploadBaseUrl")
+                );
+                environments.add(env);
+            }
+            
+            inputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load environment configuration: " + e.getMessage());
+        }
+        
+        return environments;
+    }
+}
+
+
+
+
+
+
+
+package ui;
+
+import model.Environment;
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+public class LoaderPortalFrame extends JFrame {
+    private HeaderPanel headerPanel;
+    private EnvironmentPanel environmentPanel;  // NEW
+    private UploadPanel uploadPanel;
+    private ActionButtonPanel actionButtonPanel;
+    private MessagePanel messagePanel;
+    private File selectedFile;
+    private Environment selectedEnvironment;  // NEW
+
+    public LoaderPortalFrame() {
+        setTitle("Loader Portal");
+        setSize(900, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(true);
+
+        initComponents();
+    }
+
+    private void initComponents() {
+        // Main panel with BorderLayout
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(240, 240, 245));
+
+        // Create header panel
+        headerPanel = new HeaderPanel();
+
+        // Center content panel with proper scroll
+        JPanel contentWrapper = new JPanel(new GridBagLayout());
+        contentWrapper.setBackground(new Color(240, 240, 245));
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBackground(new Color(240, 240, 245));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        // Create environment panel - NEW
+        environmentPanel = new EnvironmentPanel();
+        environmentPanel.setEnvironmentSelectionListener(this::onEnvironmentSelected);
+
+        // Create upload panel
+        uploadPanel = new UploadPanel();
+        uploadPanel.setFileSelectionListener(this::onFileSelected);
+
+        // Create action button panel
+        actionButtonPanel = new ActionButtonPanel();
+        actionButtonPanel.setRunButtonListener(this::onRunProcess);
+        actionButtonPanel.setResetButtonListener(this::onResetForm);
+        actionButtonPanel.setTrackButtonListener(this::onTrackProcess);
+        actionButtonPanel.setCheckStatusButtonListener(this::onCheckStatus);
+
+        // Create message panel
+        messagePanel = new MessagePanel();
+
+        // Add all to content panel with proper spacing - UPDATED ORDER
+        contentPanel.add(environmentPanel);  // NEW - Environment panel at top
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(uploadPanel);
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(actionButtonPanel);
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(messagePanel);
+        contentPanel.add(Box.createVerticalStrut(30));
+
+        // Add content panel to wrapper
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.NORTH;
+        contentWrapper.add(contentPanel, gbc);
+
+        // Add scroll pane for content
+        JScrollPane mainScroll = new JScrollPane(contentWrapper);
+        mainScroll.setBorder(null);
+        mainScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Add to main panel
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(mainScroll, BorderLayout.CENTER);
+
+        add(mainPanel);
+    }
+
+    // Event handlers
+    
+    // NEW - Environment selection handler
+    private void onEnvironmentSelected(Environment environment) {
+        this.selectedEnvironment = environment;
+        messagePanel.setMessage("MESSAGE: Environment selected - " + environment.getName() + 
+            "\nDB URL: " + environment.getDbUrl() +
+            "\nFile Upload URL: " + environment.getFileUploadBaseUrl());
+    }
+
+    private void onFileSelected(File file) {
+        this.selectedFile = file;
+        messagePanel.setMessage("MESSAGE: File selected - " + file.getName() + "\nReady to run process.");
+    }
+
+    // UPDATED - Added environment validation
+    private void onRunProcess() {
+        if (selectedEnvironment == null) {
+            JOptionPane.showMessageDialog(this, "Please select an environment first!",
+                    "No Environment Selected", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (selectedFile == null) {
+            JOptionPane.showMessageDialog(this, "Please select a file first!",
+                    "No File Selected", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        messagePanel.setMessage("MESSAGE: Running process with file - " + selectedFile.getName() +
+                "\nEnvironment: " + selectedEnvironment.getName() +
+                "\nProcessing...\nPlease wait...");
+
+        // Simulate processing
+        Timer timer = new Timer(2000, e -> {
+            messagePanel.appendMessage("\n\nProcess completed successfully!");
+        });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    // UPDATED - Also resets environment selection
+    private void onResetForm() {
+        selectedFile = null;
+        selectedEnvironment = null;
+        uploadPanel.reset();
+        messagePanel.setMessage("MESSAGE: Awaiting environment selection, file upload and process initiation...");
+    }
+
+    private void onTrackProcess() {
+        messagePanel.setMessage("MESSAGE: Tracking process...\nNo active process to track.");
+    }
+
+    private void onCheckStatus() {
+        messagePanel.setMessage("MESSAGE: Checking status...\nSystem status: Ready");
+    }
+}
+
+
+
+
+src/
+├── LoaderPortal.java
+├── config/
+│   ├── ConfigLoader.java
+│   └── environments.yaml (place in resources)
+├── model/
+│   └── Environment.java
+└── ui/
+    ├── LoaderPortalFrame.java (UPDATED)
+    ├── HeaderPanel.java
+    ├── UploadPanel.java
+    ├── ActionButtonPanel.java
+    ├── MessagePanel.java
+    └── EnvironmentPanel.java (NEW)
