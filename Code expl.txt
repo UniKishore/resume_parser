@@ -1,0 +1,366 @@
+1️⃣ LoaderPortal.java
+
+👉 This is the entry gate of the application
+
+import ui.LoaderPortalFrame;
+import javax.swing.*;
+
+
+🔹 This tells Java:
+
+“I want to use LoaderPortalFrame”
+
+“I want to use Swing things like windows and buttons”
+
+public class LoaderPortal {
+
+
+🔹 This creates a class called LoaderPortal
+Think of a class like a box of instructions.
+
+    public static void main(String[] args) {
+
+
+🔹 This is the starting point of the program
+Java always starts running from main()
+Like saying: “Start here”
+
+        SwingUtilities.invokeLater(() -> {
+
+
+🔹 This tells Java:
+
+“Hey, build the screen in a safe way so it doesn’t break”
+
+Swing needs this to keep the screen smooth and responsive.
+
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+🔹 This means:
+
+“Make the app look like my computer’s normal apps”
+
+Windows looks like Windows
+
+Mac looks like Mac
+
+If something goes wrong → just print the error.
+
+            LoaderPortalFrame frame = new LoaderPortalFrame();
+            frame.setVisible(true);
+
+
+🔹 This means:
+
+Create the main window
+
+Show it on the screen
+
+Like:
+
+“Open the school building and let people see it”
+
+        });
+    }
+}
+
+
+🔹 End of the program entry
+👉 This file does ONLY ONE JOB: start the app
+
+✅ Very clean
+✅ Very professional
+
+2️⃣ LoaderPortalFrame.java
+
+👉 This is the MAIN WINDOW
+
+public class LoaderPortalFrame extends JFrame {
+
+
+🔹 This means:
+
+This class IS a window
+
+JFrame = big window on screen
+
+    private HeaderPanel headerPanel;
+    private UploadPanel uploadPanel;
+    private ActionButtonPanel actionButtonPanel;
+    private MessagePanel messagePanel;
+    private File selectedFile;
+
+
+🔹 These are things inside the window
+
+HeaderPanel → top title area
+
+UploadPanel → file upload area
+
+ActionButtonPanel → buttons
+
+MessagePanel → messages
+
+selectedFile → remembers which file user chose
+
+Like writing:
+
+“I will have these rooms inside my building”
+
+    public LoaderPortalFrame() {
+
+
+🔹 This runs when the window is created
+
+        setTitle("Loader Portal");
+        setSize(900, 700);
+
+
+🔹 Sets:
+
+Window name
+
+Window size
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+
+🔹 When user clicks ❌
+→ close the app fully
+
+        setLocationRelativeTo(null);
+
+
+🔹 Put window in center of screen
+
+        setResizable(true);
+
+
+🔹 User can resize the window
+
+        initComponents();
+
+
+🔹 “Now build everything inside the window”
+
+🧱 Building the Window Layout
+JPanel mainPanel = new JPanel(new BorderLayout());
+
+
+🔹 A big container inside the window
+BorderLayout means:
+
+Top
+
+Center
+
+Bottom
+
+headerPanel = new HeaderPanel();
+
+
+🔹 Create the top header
+
+uploadPanel = new UploadPanel();
+uploadPanel.setFileSelectionListener(this::onFileSelected);
+
+
+🔹 Create upload area
+🔹 When user selects a file → call onFileSelected()
+
+Like:
+
+“When kid submits homework, tell teacher”
+
+actionButtonPanel = new ActionButtonPanel();
+actionButtonPanel.setRunButtonListener(this::onRunProcess);
+actionButtonPanel.setResetButtonListener(this::onResetForm);
+actionButtonPanel.setTrackButtonListener(this::onTrackProcess);
+actionButtonPanel.setCheckStatusButtonListener(this::onCheckStatus);
+
+
+🔹 Create buttons
+🔹 Tell what to do when each button is clicked
+
+messagePanel = new MessagePanel();
+
+
+🔹 Create message box
+
+contentPanel.add(uploadPanel);
+contentPanel.add(actionButtonPanel);
+contentPanel.add(messagePanel);
+
+
+🔹 Put all panels one below the other
+
+mainPanel.add(headerPanel, BorderLayout.NORTH);
+mainPanel.add(mainScroll, BorderLayout.CENTER);
+
+
+🔹 Header on top
+🔹 Everything else in middle
+
+add(mainPanel);
+
+
+🔹 Put everything into the window
+
+🎯 Event Methods (What happens on actions)
+private void onFileSelected(File file) {
+
+
+🔹 Runs when user selects a file
+
+this.selectedFile = file;
+
+
+🔹 Remember the file
+
+messagePanel.setMessage("File selected...");
+
+
+🔹 Show message to user
+
+private void onRunProcess() {
+
+
+🔹 Runs when RUN button clicked
+
+if (selectedFile == null) {
+
+
+🔹 If user didn’t select file
+
+JOptionPane.showMessageDialog(...)
+
+
+🔹 Show warning popup
+
+Timer timer = new Timer(2000, e -> {
+
+
+🔹 Wait 2 seconds (fake processing)
+
+messagePanel.appendMessage("Process completed");
+
+
+🔹 Show success message
+
+private void onResetForm() {
+
+
+🔹 Clear everything
+
+uploadPanel.reset();
+messagePanel.setMessage("Awaiting...");
+
+
+🔹 Reset UI to start state
+
+private void onTrackProcess() { ... }
+private void onCheckStatus() { ... }
+
+
+🔹 Just show messages (for now)
+
+3️⃣ ActionButtonPanel.java
+
+👉 Only buttons live here
+
+public class ActionButtonPanel extends JPanel {
+
+
+🔹 This is a small UI section
+
+runBtn = createButton("RUN", green);
+
+
+🔹 Create buttons with colors
+
+btn.addMouseListener(...)
+
+
+🔹 Change color when mouse comes in/out
+Like hover effect on websites
+
+public void setRunButtonListener(Runnable listener)
+
+
+🔹 This allows main window to say:
+
+“When clicked, do this”
+
+4️⃣ HeaderPanel.java
+
+👉 Only title area
+
+JLabel titleLabel = new JLabel("LOADER PORTAL");
+
+
+🔹 Big text
+
+JLabel subtitleLabel = new JLabel("Internal QA Automation Tool");
+
+
+🔹 Small text
+
+No logic here ✔
+Pure UI ✔
+
+5️⃣ MessagePanel.java
+
+👉 Notice board
+
+private JTextArea messageArea;
+
+
+🔹 Big text box
+
+setMessage(String message)
+
+
+🔹 Replace message
+
+appendMessage(String message)
+
+
+🔹 Add new message below old one
+
+6️⃣ UploadPanel.java
+
+👉 File selection area
+
+private Consumer<File> fileSelectionListener;
+
+
+🔹 This is like:
+
+“When file is chosen, tell someone else”
+
+selectFileBtn.addActionListener(e -> selectFile());
+
+
+🔹 When button clicked → open file chooser
+
+JFileChooser fileChooser = new JFileChooser();
+
+
+🔹 Open file browser
+
+fileSelectionListener.accept(selectedFile);
+
+
+🔹 Inform main window:
+
+“File has been selected”
+
+public void reset()
+
+
+🔹 Reset upload UI
